@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>cdak by quite &amp; orange</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+
+  /* launcher */
+  #ui { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; cursor: pointer; user-select: none; color: #bcd;
+        font: 13px/1.7 sans-serif; letter-spacing: .06em;
+        background: radial-gradient(ellipse at center, rgba(0,0,0,.45) 0%, rgba(0,0,0,.8) 70%, #000 100%);
+        transition: opacity .6s ease; }
+  #ui.hidden { opacity: 0; pointer-events: none; }
+  #ui h1 { margin: 0; font-weight: 300; font-size: clamp(56px, 11vw, 140px); line-height: 1; letter-spacing: .12em;
+           color: #fff; text-shadow: 0 0 6px #cfe, 0 0 24px #8cf, 0 0 70px #39b; }
+  #ui .by { margin-top: 14px; font-size: 15px; color: #e6f0ff; letter-spacing: .25em; text-transform: lowercase; }
+  #ui .meta { margin-top: 4px; color: #7f9ab8; }
+  #ui .credits { margin-top: 22px; color: #6d86a6; font-size: 12px; }
+  #ui .credits b { color: #9fb6d4; font-weight: 400; }
+  #ui .row { margin-top: 38px; display: flex; gap: 12px; align-items: center; }
+  #ui select, #ui button {
+    font: inherit; letter-spacing: .08em; border-radius: 2px; padding: 8px 16px; cursor: pointer; outline: none;
+    background: rgba(8,18,34,.85); color: #dbe8ff; border: 1px solid rgba(140,190,255,.45);
+    box-shadow: 0 0 12px rgba(80,150,255,.15), inset 0 0 18px rgba(80,150,255,.08);
+    transition: border-color .2s, box-shadow .2s; }
+  #ui select { appearance: none; -webkit-appearance: none; padding-right: 36px;
+    background-image: linear-gradient(45deg, transparent 50%, #9cf 50%), linear-gradient(135deg, #9cf 50%, transparent 50%);
+    background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+  #ui select:hover, #ui button:hover, #ui select:focus-visible, #ui button:focus-visible {
+    border-color: #bfe0ff; box-shadow: 0 0 22px rgba(120,190,255,.45), inset 0 0 18px rgba(120,190,255,.15); }
+  #ui button { color: #fff; border-color: rgba(170,215,255,.75); background: rgba(20,60,120,.7); }
+  #ui .keys { position: absolute; bottom: 22px; color: #4f6784; font-size: 11px; letter-spacing: .2em;
+              text-decoration: none; transition: color .2s; }
+  #ui .keys:hover { color: #9fb6d4; }
+  #status { position: absolute; left: 14px; bottom: 12px; color: #567; font: 11px sans-serif; letter-spacing: .1em; }
+  #status:empty { display: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <h1>cdak</h1>
+  <div class="by">quite &amp; orange</div>
+  <div class="meta">4k intro · chaos constructions 2010</div>
+  <div class="credits">shader <b>unc</b> &nbsp;·&nbsp; audio <b>brothomstates</b> &nbsp;·&nbsp; code <b>ized</b></div>
+  <div class="row">
+    <select id="version" title="which release to run">
+      <option value="party">party version</option>
+      <option value="final">final version</option>
+    </select>
+    <button id="go" type="button">start</button>
+  </div>
+  <a class="keys" href="https://github.com/mrdoob/cdak" target="_blank" rel="noopener">github</a>
+</div>
+<div id="status"></div>
+<script src="h_table.js"></script>        <!-- optional: launcher preview + ?t= (party) -->
+<script src="h_table_final.js"></script>  <!-- optional: launcher preview + ?t= (final) -->
+<script src="cdak_synth.js"></script>
+<script src="cdak_synth_final.js"></script>
+<script src="cdak.js"></script>
+<script>
+  const canvas = document.getElementById('c'), ui = document.getElementById('ui');
+  const sel = document.getElementById('version'), statusEl = document.getElementById('status');
+  const setStatus = (s) => { statusEl.textContent = s; };
+  let app = null, preview = null;
+
+  // version: #party / #final (hash), default party.  The dropdown mirrors the hash.
+  function versionFromUrl() {
+    const h = location.hash.replace('#', '');
+    return CDAK.VERSIONS[h] ? h : 'party';
+  }
+
+  // launcher background: one frame of the selected version, rendered live
+  function showLauncher() {
+    ui.classList.remove('hidden');
+    const ver = CDAK.VERSIONS[sel.value];
+    try {
+      if (!preview || preview.version !== ver.name) preview = CDAK.createRenderer(canvas, ver);
+      const w = Math.min(1280, innerWidth);
+      preview.resize(w, Math.max(1, Math.round(w * innerHeight / innerWidth)));
+      preview.render(CDAK.constantsAt(ver, ver.preview));
+    } catch (e) { setStatus(e.message); }
+  }
+
+  function begin() {
+    if (app) return;
+    ui.classList.add('hidden');
+    try {
+      app = CDAK.start(canvas, setStatus, { version: sel.value, renderer: preview, onEnd: () => { app = null; showLauncher(); } });
+      window.__app = app;
+    } catch (e) { ui.classList.remove('hidden'); setStatus(e.message); throw e; }
+  }
+  function stop() { if (!app) return; app.stop(); app = null; setStatus(''); showLauncher(); }
+  let flashTimer = null;
+  function flash(text) {               // transient status line (e.g. the time after seeking)
+    setStatus(text); clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => { if (statusEl.textContent === text) setStatus(''); }, 1200);
+  }
+  const mmss = (t) => { t = Math.round(t); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+
+  sel.value = versionFromUrl();
+  sel.addEventListener('click', (e) => e.stopPropagation());
+  document.querySelector('#ui a').addEventListener('click', (e) => e.stopPropagation());   // the link must not start the intro
+  sel.addEventListener('change', () => { location.hash = sel.value; showLauncher(); });
+  addEventListener('hashchange', () => {
+    const v = versionFromUrl();
+    if (sel.value !== v) { sel.value = v; if (app) location.reload(); else showLauncher(); }
+  });
+  ui.addEventListener('click', begin);
+  addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') stop();
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && app && app.seek) {
+      e.preventDefault();
+      const t = app.seek(e.key === 'ArrowLeft' ? -5 : 5);
+      flash((e.key === 'ArrowLeft' ? '◀ ' : '▶ ') + mmss(t));
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && !app && document.activeElement !== sel) { e.preventDefault(); begin(); }
+    else if (e.key === ' ' && app && app.pause) { e.preventDefault(); app.pause(); }
+    if (e.key === 'f' && document.fullscreenEnabled) {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen();
+    }
+  });
+  addEventListener('resize', () => { if (!app) showLauncher(); });
+
+  if (new URLSearchParams(location.search).has('t')) begin();   // debug: single frame, no audio
+  else showLauncher();
+</script>
+</body>
+</html>
