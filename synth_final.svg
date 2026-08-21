@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 850" width="1400" height="850" role="img" aria-label="Signal flow of the cdak final-version synth: 31 automation segments and Catmull-Rom fractal noise, evaluated every 32 samples, drive 32 voices; each voice is six oscStep units (phase accumulator, pulse/cosine shape, tanh) — a Hann envelope whose wrap re-triggers a shared sequencer, two slow LFOs, an FM modulator at an integer ratio and a carrier — panned into L/R; the mix goes through a 24-tap feedback delay with band-pass, four fixed taps give the stereo output; the same thread computes the shader constants including the camera." font-family="Helvetica, Arial, sans-serif" color="#b9cbe3">
+<title>cdak final version — synth signal flow</title><desc>Signal flow of the cdak final-version synth: 31 automation segments and Catmull-Rom fractal noise, evaluated every 32 samples, drive 32 voices; each voice is six oscStep units (phase accumulator, pulse/cosine shape, tanh) — a Hann envelope whose wrap re-triggers a shared sequencer, two slow LFOs, an FM modulator at an integer ratio and a carrier — panned into L/R; the mix goes through a 24-tap feedback delay with band-pass, four fixed taps give the stereo output; the same thread computes the shader constants including the camera.</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b9cbe3"/></marker><marker id="aacc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ffb84d"/></marker><marker id="actl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7fd3ff"/></marker></defs>
+<rect width="1400" height="850" fill="#05080e"/>
+<text x="20" y="26" font-size="16" fill="#eaf3ff" text-anchor="start" font-weight="bold">cdak — final version synth  (cdak_synth_final.js, transliterated from the x87 thread)</text>
+<text x="20" y="44" font-size="11" fill="#7d93b0" text-anchor="start">one pass per output sample, 44 100 Hz, 16-bit stereo · float32 · blue = control (automation / noise, every 32 samples), amber = feedback &amp; shared state</text>
+<rect x="20" y="58" width="150" height="100" rx="4" fill="#0b1626" stroke="#7fd3ff" stroke-width="1.2"/>
+<text x="30" y="76" font-size="12.5" font-weight="bold" fill="#7fd3ff">clock</text>
+<text x="30" y="91" font-size="11" fill="#b9cbe3">t = n · 2.2650e-5 s</text>
+<text x="30" y="105" font-size="11" fill="#b9cbe3">(1/44100 with a 16-bit</text>
+<text x="30" y="119" font-size="11" fill="#b9cbe3"> mantissa: runs 0.1 % slow)</text>
+<text x="30" y="133" font-size="11" fill="#b9cbe3">exit at t = 252 s</text>
+<rect x="190" y="58" width="560" height="100" rx="4" fill="#0b1626" stroke="#7fd3ff" stroke-width="1.2"/>
+<text x="200" y="76" font-size="12.5" font-weight="bold" fill="#7fd3ff">automation  A[0…14]   (recomputed every 32 samples)</text>
+<text x="200" y="91" font-size="10.5" fill="#b9cbe3">A[i] = Σ over its segments of  a + (b − a) · smoothstep(t0, t1, t)^e      (31 segments, additive)</text>
+<text x="200" y="105" font-size="10.5" fill="#b9cbe3">A1 pitch random→pattern · A3, A6 level · A7 modulator depth · A8 delay feed · A9 note modulus</text>
+<text x="200" y="119" font-size="10.5" fill="#b9cbe3">A10, A11 note length range · A12 random pitch range · A13 pan width · A0, A5, A14 camera</text>
+<text x="200" y="133" font-size="10.5" fill="#b9cbe3">e.g. A6: 1→1.5 over 56–75 s, −1.5 over 208–246 s (fade out);  A8: delay opens at 18–24 s</text>
+<rect x="770" y="58" width="610" height="100" rx="4" fill="#0b1626" stroke="#7fd3ff" stroke-width="1.2"/>
+<text x="780" y="76" font-size="12.5" font-weight="bold" fill="#7fd3ff">noise</text>
+<text x="780" y="91" font-size="10.5" fill="#b9cbe3">table: 65 536 LCG values   (x += 0x27d4eb2d, ror 2, ^ 0xffff0000)</text>
+<text x="780" y="105" font-size="10.5" fill="#b9cbe3">fractal2(x; D, E, F) = Σ j&lt;F  (E/256)^(j+1) · catmullrom(table, D·256 + x·1.953^j)</text>
+<text x="780" y="119" font-size="10.5" fill="#b9cbe3">per voice, every 32 samples and at note-on: 9 params N0…N8 = A + (B−A)·fractal2(C·x),  x = t/2 + 100·i/32</text>
+<text x="780" y="133" font-size="10.5" fill="#b9cbe3">N0 length · N1 envelope amp · N2 osc4 rate · N3, N4 LFO periods · N5, N6 LFO amps · N7 random pitch · N8 pan</text>
+<rect x="20" y="190" width="940" height="470" rx="6" fill="none" stroke="#7d93b0" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="32" y="206" font-size="12" font-weight="bold" fill="#7d93b0">voice i   (×32, in order i = 1 … 32)</text>
+<rect x="40" y="225" width="260" height="110" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="50" y="243" font-size="12.5" font-weight="bold" fill="#eaf3ff">osc0  envelope  (w = .5, Hann)</text>
+<text x="50" y="258" font-size="11" fill="#b9cbe3">rate = 1/len,  len = lerp(A10, A11, N0) samples</text>
+<text x="50" y="272" font-size="11" fill="#b9cbe3">o0 = tanh(env · N1 · 1.336)</text>
+<text x="50" y="286" font-size="11" fill="#b9cbe3">E1 = smoothstep(.5 + phase)   (attack)</text>
+<text x="50" y="300" font-size="11" fill="#b9cbe3">L18 = V7c · o0³   (carrier amplitude)</text>
+<text x="50" y="314" font-size="11" fill="#b9cbe3">phase wraps  →  note-on</text>
+<rect x="40" y="365" width="260" height="132" rx="4" fill="#0b1626" stroke="#ffb84d" stroke-width="1.2"/>
+<text x="50" y="383" font-size="12.5" font-weight="bold" fill="#ffb84d">shared sequencer  (on any voice&#x27;s note-on)</text>
+<text x="50" y="398" font-size="11" fill="#b9cbe3">even step: note += pattern[180]</text>
+<text x="50" y="412" font-size="11" fill="#b9cbe3">              (t &lt; 98 s: only entries 0–3)</text>
+<text x="50" y="426" font-size="11" fill="#b9cbe3">odd step:  note += 12</text>
+<text x="50" y="440" font-size="11" fill="#b9cbe3">note mod (round(A9)+2)·12;  step 0: fold below 24</text>
+<text x="50" y="454" font-size="11" fill="#b9cbe3">steps ≥ 2 and t ≥ 98 s: raise above 30</text>
+<text x="50" y="468" font-size="11" fill="#b9cbe3">step = (step + 1) mod 8</text>
+<rect x="40" y="510" width="260" height="100" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="50" y="528" font-size="12.5" font-weight="bold" fill="#eaf3ff">oscStep unit  (each oscillator below)</text>
+<text x="50" y="543" font-size="11" fill="#b9cbe3">inc = clamp(inc, 0, .5);  phase += inc</text>
+<text x="50" y="557" font-size="11" fill="#b9cbe3">phase ≥ 1 → phase −= 1, wrap flag</text>
+<text x="50" y="571" font-size="11" fill="#b9cbe3">v = w − (1 − w)·cos 2π(phase + pm)</text>
+<text x="50" y="585" font-size="11" fill="#b9cbe3">out = tanh(v · amp · 1.336),  tanh ≈ x(27+x²)/(27+9x²)</text>
+<text x="50" y="599" font-size="11" fill="#b9cbe3">w = .5: Hann pulse (osc0, osc1) · w = 0: cosine</text>
+<rect x="330" y="225" width="200" height="72" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="340" y="243" font-size="12.5" font-weight="bold" fill="#eaf3ff">osc1  slow  (w = .5)</text>
+<text x="340" y="258" font-size="11" fill="#b9cbe3">rate 1/N4  (1–45 s)</text>
+<text x="340" y="272" font-size="11" fill="#b9cbe3">amp N6·E1  →  o1</text>
+<rect x="330" y="335" width="200" height="72" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="340" y="353" font-size="12.5" font-weight="bold" fill="#eaf3ff">osc2  slow LFO  (w = 0)</text>
+<text x="340" y="368" font-size="11" fill="#b9cbe3">rate 1/N3  (0.5–3 s)</text>
+<text x="340" y="382" font-size="11" fill="#b9cbe3">amp E1·N5  →  o2</text>
+<rect x="560" y="225" width="190" height="86" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="570" y="243" font-size="12.5" font-weight="bold" fill="#eaf3ff">osc4  (w = 0)</text>
+<text x="570" y="258" font-size="11" fill="#b9cbe3">rate inc4  (pitch)</text>
+<text x="570" y="272" font-size="11" fill="#b9cbe3">phase mod o2</text>
+<text x="570" y="286" font-size="11" fill="#b9cbe3">amp o1·(A3+A6) + A1  →  o4</text>
+<rect x="560" y="350" width="190" height="100" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="570" y="368" font-size="12.5" font-weight="bold" fill="#eaf3ff">osc3  modulator  (w = 0)</text>
+<text x="570" y="383" font-size="11" fill="#b9cbe3">rate inc4 · 2·(4 + round(9·n2))</text>
+<text x="570" y="397" font-size="11" fill="#b9cbe3">  integer ratio; n2 = noise of</text>
+<text x="570" y="411" font-size="11" fill="#b9cbe3">  (t−96)·i/32, 8 octaves</text>
+<text x="570" y="425" font-size="11" fill="#b9cbe3">phase mod o2,  amp A7·L18  →  o3</text>
+<rect x="560" y="495" width="190" height="100" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="570" y="513" font-size="12.5" font-weight="bold" fill="#eaf3ff">pitch  (at note-on)</text>
+<text x="570" y="528" font-size="11" fill="#b9cbe3">n = lerp(N7·A12 (random), note, A1)</text>
+<text x="570" y="542" font-size="11" fill="#b9cbe3">inc5 = 2^((n−48)/12)·440/44100</text>
+<text x="570" y="556" font-size="11" fill="#b9cbe3">V7c = smoothstep(.5 + .0018/inc5)</text>
+<text x="570" y="570" font-size="11" fill="#b9cbe3">inc4 = inc5·N2·(2i/32 + A1·(1−2i/32))</text>
+<text x="570" y="584" font-size="11" fill="#b9cbe3">→ rates of osc5, osc4, osc3</text>
+<rect x="780" y="225" width="160" height="86" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="790" y="243" font-size="12.5" font-weight="bold" fill="#eaf3ff">osc5  carrier  (w = 0)</text>
+<text x="790" y="258" font-size="11" fill="#b9cbe3">rate inc5  (note)</text>
+<text x="790" y="272" font-size="11" fill="#b9cbe3">phase mod o4 + o2</text>
+<text x="790" y="286" font-size="11" fill="#b9cbe3">amp L18  →  o5</text>
+<rect x="780" y="495" width="160" height="100" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="790" y="513" font-size="12.5" font-weight="bold" fill="#eaf3ff">voice output</text>
+<text x="790" y="528" font-size="11" fill="#b9cbe3">S = (o3 + o5)·A6·3776</text>
+<text x="790" y="542" font-size="11" fill="#b9cbe3">pan = .5 + N8·A13</text>
+<text x="790" y="556" font-size="11" fill="#b9cbe3">L += pan·S</text>
+<text x="790" y="570" font-size="11" fill="#b9cbe3">R += (1 − pan)·S</text>
+<text x="330" y="470" font-size="10.5" fill="#7d93b0" text-anchor="start">G2c = Σ o0 over the voices → h.x</text>
+<text x="330" y="630" font-size="10.5" fill="#7d93b0" text-anchor="start">each voice re-reads its 9 noise params every 32 samples and right after its own note-on</text>
+<rect x="1000" y="225" width="180" height="72" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="1010" y="243" font-size="12.5" font-weight="bold" fill="#eaf3ff">mix</text>
+<text x="1010" y="258" font-size="11" fill="#b9cbe3">mix = (L + R) · A8</text>
+<text x="1010" y="272" font-size="11" fill="#b9cbe3">(A8 = 0 until 18 s: no delay yet)</text>
+<rect x="1200" y="225" width="180" height="130" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="1210" y="243" font-size="12.5" font-weight="bold" fill="#eaf3ff">delay line  DL[131 072]</text>
+<text x="1210" y="258" font-size="11" fill="#b9cbe3">24 read taps, k = 1…24, u = k/24:</text>
+<text x="1210" y="272" font-size="11" fill="#b9cbe3">  delay = 41 728·(1 − u²)</text>
+<text x="1210" y="286" font-size="11" fill="#b9cbe3">      + 4 096·table[k] + 352·tri_k</text>
+<text x="1210" y="300" font-size="11" fill="#b9cbe3">  tri_k: slow LFO, period 24/k s</text>
+<text x="1210" y="314" font-size="11" fill="#b9cbe3">  acc = Σ u · DL[W − delay − 2048]</text>
+<text x="1210" y="328" font-size="11" fill="#b9cbe3">write: DL[W] = lp1 − lp2</text>
+<rect x="1000" y="350" width="180" height="100" rx="4" fill="#0b1626" stroke="#ffb84d" stroke-width="1.2"/>
+<text x="1010" y="368" font-size="12.5" font-weight="bold" fill="#ffb84d">band-pass feedback</text>
+<text x="1010" y="383" font-size="11" fill="#b9cbe3">M2 = mix + .275·acc</text>
+<text x="1010" y="397" font-size="11" fill="#b9cbe3">lp1 += .96·(M2 − lp1)</text>
+<text x="1010" y="411" font-size="11" fill="#b9cbe3">lp2 += .019·(lp1 − lp2)</text>
+<text x="1010" y="425" font-size="11" fill="#b9cbe3">lp1 − lp2 → DL[W]</text>
+<rect x="1000" y="495" width="380" height="86" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="1010" y="513" font-size="12.5" font-weight="bold" fill="#eaf3ff">stereo output</text>
+<text x="1010" y="528" font-size="11" fill="#b9cbe3">L&#x27; = L − DL[W − 32 912] + DL[W − 21 684]</text>
+<text x="1010" y="542" font-size="11" fill="#b9cbe3">R&#x27; = R + DL[W − 33 972] − DL[W − 20 624]</text>
+<text x="1010" y="556" font-size="11" fill="#b9cbe3">clamp ±32 767 → int16      W = W + 1 (mod 131 072)</text>
+<rect x="20" y="690" width="1360" height="100" rx="4" fill="#0b1626" stroke="#7fd3ff" stroke-width="1.2"/>
+<text x="30" y="708" font-size="12.5" font-weight="bold" fill="#7fd3ff">shader constants  (16 floats, copied to the renderer while the synth thread is suspended)</text>
+<text x="30" y="723" font-size="10.5" fill="#b9cbe3">h.x = .0359·G2c + .0015·(A3 + A6 − 1)  level        h.y = t        m.xyzw = camera rotation        q.xyz = camera position,  q.w = field of view</text>
+<text x="30" y="737" font-size="10.5" fill="#b9cbe3">m, q: every 32 samples, 8 noise values fractal2(c0·t·.025; 4 octaves, centred) · c1 · (A5 for m, A14 for q.xyz, 1 for q.w);  q.z += A0 (the flight path)</text>
+<text x="30" y="751" font-size="10.5" fill="#b9cbe3">quirk kept: the 24th delay tap&#x27;s LFO phase lives at the address of h.x, so the shader sees level + 2.3e-5</text>
+<polyline points="170,108 190,108" fill="none" stroke="#7fd3ff" stroke-width="1.3" marker-end="url(#actl)"/>
+<polyline points="470,158 470,190" fill="none" stroke="#7fd3ff" stroke-width="1.3" marker-end="url(#actl)"/>
+<text x="490" y="169" font-size="10.5" fill="#7fd3ff" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">A[·]</text>
+<polyline points="1075,158 1075,205 965,205" fill="none" stroke="#7fd3ff" stroke-width="1.3" marker-end="url(#actl)"/>
+<text x="1115" y="201" font-size="10.5" fill="#7fd3ff" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">N0 … N8</text>
+<polyline points="300,260 330,261" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="315" y="256" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">E1</text>
+<polyline points="300,286 315,285 315,371 330,371" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="303" y="329" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">E1</text>
+<polyline points="300,320 765,320 765,293 780,294" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="427" y="315" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">L18</text>
+<polyline points="655,320 655,350" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="671" y="330" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">L18</text>
+<polyline points="170,335 170,365" fill="none" stroke="#ffb84d" stroke-width="1.3" marker-end="url(#aacc)"/>
+<text x="224" y="345" font-size="10.5" fill="#ffb84d" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">wrap → note on</text>
+<polyline points="300,431 545,431 545,545 560,545" fill="none" stroke="#ffb84d" stroke-width="1.3" marker-end="url(#aacc)"/>
+<text x="431" y="426" font-size="10.5" fill="#ffb84d" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">note</text>
+<polyline points="530,261 560,264" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="545" y="257" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">o1</text>
+<polyline points="530,371 552,371 552,300 560,300" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="532" y="337" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">o2 pm</text>
+<polyline points="552,371 552,400 560,400" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="532" y="384" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">o2 pm</text>
+<polyline points="750,268 780,268" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="765" y="263" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">o4</text>
+<polyline points="860,311 860,495" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="872" y="398" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">o5</text>
+<polyline points="750,420 800,420 800,495" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="788" y="415" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">o3</text>
+<polyline points="693,495 693,450" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)" stroke-dasharray="5 4"/>
+<text x="729" y="468" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">inc4·ratio</text>
+<polyline points="940,545 980,545 980,261 1000,261" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="962" y="408" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">L, R</text>
+<polyline points="980,545 1000,545" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<polyline points="1090,297 1090,350" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="1104" y="318" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">mix</text>
+<polyline points="1254,355 1254,400 1180,400" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="1268" y="386" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">acc</text>
+<polyline points="1180,435 1190,435 1300,435 1299,355" fill="none" stroke="#ffb84d" stroke-width="1.3" marker-end="url(#aacc)"/>
+<text x="1270" y="447" font-size="10.5" fill="#ffb84d" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">lp1 − lp2  (feedback)</text>
+<polyline points="1380,290 1392,290 1392,538 1380,538" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="1358" y="409" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">4 fixed taps</text>
+<polyline points="300,660 300,690" fill="none" stroke="#7fd3ff" stroke-width="1.3" marker-end="url(#actl)"/>
+<text x="316" y="670" font-size="10.5" fill="#7fd3ff" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">G2c</text>
+</svg>

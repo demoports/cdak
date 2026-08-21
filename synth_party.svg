@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 840" width="1400" height="840" role="img" aria-label="Signal flow of the cdak party-version synth: time envelopes and fractal noise drive 16 voices; each voice has a Hann envelope that retriggers a shared sequencer, four oscillators with phase modulation and a feedback bus from the previous sample of itself and its neighbours; the voices are mixed, soft-clipped and sent through a 22-tap feedback delay with band-pass, and four fixed taps give the stereo output." font-family="Helvetica, Arial, sans-serif" color="#b9cbe3">
+<title>cdak party version — synth signal flow</title><desc>Signal flow of the cdak party-version synth: time envelopes and fractal noise drive 16 voices; each voice has a Hann envelope that retriggers a shared sequencer, four oscillators with phase modulation and a feedback bus from the previous sample of itself and its neighbours; the voices are mixed, soft-clipped and sent through a 22-tap feedback delay with band-pass, and four fixed taps give the stereo output.</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b9cbe3"/></marker><marker id="aacc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ffb84d"/></marker><marker id="actl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7fd3ff"/></marker></defs>
+<rect width="1400" height="840" fill="#05080e"/>
+<text x="20" y="26" font-size="16" fill="#eaf3ff" text-anchor="start" font-weight="bold">cdak — party version synth  (cdak_synth.js, transliterated from the x87 thread)</text>
+<text x="20" y="44" font-size="11" fill="#7d93b0" text-anchor="start">one pass per output sample, 44 100 Hz, 16-bit stereo · all state float32 · blue = control from time / noise, amber = feedback &amp; shared state</text>
+<rect x="20" y="58" width="150" height="100" rx="4" fill="#0b1626" stroke="#7fd3ff" stroke-width="1.2"/>
+<text x="30" y="76" font-size="12.5" font-weight="bold" fill="#7fd3ff">clock</text>
+<text x="30" y="91" font-size="11" fill="#b9cbe3">t = n / 44100 s</text>
+<text x="30" y="105" font-size="11" fill="#b9cbe3">n = sample counter</text>
+<rect x="190" y="58" width="650" height="100" rx="4" fill="#0b1626" stroke="#7fd3ff" stroke-width="1.2"/>
+<text x="200" y="76" font-size="12.5" font-weight="bold" fill="#7fd3ff">time envelopes  (functions of t only)</text>
+<text x="200" y="91" font-size="10.5" fill="#b9cbe3">S = smoothstep(t/29.1)           L_c = S⁴  → pitch: random → pattern, dry level</text>
+<text x="200" y="105" font-size="10.5" fill="#b9cbe3">G_c4 = S⁶⁴ − smoothstep((t−90)/150)^1.4  → note length (100 → 793 800 samples), delay feed</text>
+<text x="200" y="119" font-size="10.5" fill="#b9cbe3">L_30 = .25 + 2π·smoothstep((t−60)/180)^1.5  → neighbour feedback          L_24 = smoothstep((t−200)/40)^37  → end speed-up</text>
+<text x="200" y="133" font-size="10.5" fill="#b9cbe3">active voices = round(16·(1 − smoothstep((t−240)/20)))  → 16 until 240 s, 0 at 260 s</text>
+<rect x="860" y="58" width="520" height="100" rx="4" fill="#0b1626" stroke="#7fd3ff" stroke-width="1.2"/>
+<text x="870" y="76" font-size="12.5" font-weight="bold" fill="#7fd3ff">noise</text>
+<text x="870" y="91" font-size="10.5" fill="#b9cbe3">table: 65 536 LCG values in [0,1)   (seed 0x0f82d387, x·0x15a4e353 ^ 0x7fffffff)</text>
+<text x="870" y="105" font-size="10.5" fill="#b9cbe3">FN_k(x) = Σ j=0..10  lerp(table, x·φ^j) · (4/k)^(j+1)      φ = 1.618, k = 5…16</text>
+<text x="870" y="119" font-size="10.5" fill="#b9cbe3">every call advances x by 307.666;  per voice x = t/30 + 14057·i  (+10·L_24)</text>
+<rect x="20" y="190" width="920" height="420" rx="6" fill="none" stroke="#7d93b0" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="32" y="206" font-size="12" font-weight="bold" fill="#7d93b0">voice i   (×16, in order i = 0 … 15; every voice runs all of this each sample)</text>
+<rect x="40" y="225" width="200" height="88" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="50" y="243" font-size="12.5" font-weight="bold" fill="#eaf3ff">envelope</text>
+<text x="50" y="258" font-size="11" fill="#b9cbe3">phase += inc</text>
+<text x="50" y="272" font-size="11" fill="#b9cbe3">env = (1 − cos phase)/2   (Hann)</text>
+<text x="50" y="286" font-size="11" fill="#b9cbe3">phase ≥ 2π  →  retrigger</text>
+<text x="50" y="300" font-size="11" fill="#b9cbe3">inc += L_24  (faster at the end)</text>
+<rect x="40" y="340" width="200" height="88" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="50" y="358" font-size="12.5" font-weight="bold" fill="#eaf3ff">retrigger (note on)</text>
+<text x="50" y="373" font-size="11" fill="#b9cbe3">len = lerp(L_10, L_2c, FN12)  samples</text>
+<text x="50" y="387" font-size="11" fill="#b9cbe3">L_10 = 1 + 352 799·L_c</text>
+<text x="50" y="401" font-size="11" fill="#b9cbe3">L_2c = 100 + 793 700·G_c4</text>
+<text x="50" y="415" font-size="11" fill="#b9cbe3">inc = 2π / len</text>
+<rect x="40" y="455" width="200" height="130" rx="4" fill="#0b1626" stroke="#ffb84d" stroke-width="1.2"/>
+<text x="50" y="473" font-size="12.5" font-weight="bold" fill="#ffb84d">shared sequencer</text>
+<text x="50" y="488" font-size="11" fill="#b9cbe3">advanced by every voice&#x27;s note-on</text>
+<text x="50" y="502" font-size="11" fill="#b9cbe3">step++ (only after 29.1 s)</text>
+<text x="50" y="516" font-size="11" fill="#b9cbe3">odd step: note += pattern[52]</text>
+<text x="50" y="530" font-size="11" fill="#b9cbe3">even step: note += 12</text>
+<text x="50" y="544" font-size="11" fill="#b9cbe3">note mod M,  M: 24→36→…→84→48→…</text>
+<text x="50" y="558" font-size="11" fill="#b9cbe3">after 150 s: note++ every 64 steps</text>
+<rect x="270" y="225" width="170" height="72" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="280" y="243" font-size="12.5" font-weight="bold" fill="#eaf3ff">osc0  slow LFO</text>
+<text x="280" y="258" font-size="11" fill="#b9cbe3">rate = 1e-5 + FN16·3.6e-4</text>
+<text x="280" y="272" font-size="11" fill="#b9cbe3">depth = voice 0&#x27;s FN16·1.2π + .4π</text>
+<rect x="270" y="340" width="170" height="92" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="280" y="358" font-size="12.5" font-weight="bold" fill="#eaf3ff">osc2  slow</text>
+<text x="280" y="373" font-size="11" fill="#b9cbe3">period = lerp(L_10, L_2c, 2·FN5)</text>
+<text x="280" y="387" font-size="11" fill="#b9cbe3">only voice 0&#x27;s phase is used,</text>
+<text x="280" y="401" font-size="11" fill="#b9cbe3">by all voices, as the</text>
+<text x="280" y="415" font-size="11" fill="#b9cbe3">modulator depth (1 − cos φ2⁰)/2</text>
+<rect x="470" y="225" width="190" height="100" rx="4" fill="#0b1626" stroke="#ffb84d" stroke-width="1.2"/>
+<text x="480" y="243" font-size="12.5" font-weight="bold" fill="#ffb84d">modulation bus  L28</text>
+<text x="480" y="258" font-size="11" fill="#b9cbe3">sin(osc0) · depth</text>
+<text x="480" y="272" font-size="11" fill="#b9cbe3">+ .5 · prev_i</text>
+<text x="480" y="286" font-size="11" fill="#b9cbe3">+ .25 · L_30 · (prev_i−1 + prev_i+1)</text>
+<text x="480" y="300" font-size="11" fill="#b9cbe3">(prev = output one sample ago)</text>
+<rect x="470" y="355" width="190" height="72" rx="4" fill="#0b1626" stroke="#ffb84d" stroke-width="1.2"/>
+<text x="480" y="373" font-size="12.5" font-weight="bold" fill="#ffb84d">prev  (1-sample delay)</text>
+<text x="480" y="388" font-size="11" fill="#b9cbe3">prev_i = out of voice i</text>
+<text x="480" y="402" font-size="11" fill="#b9cbe3">at the previous sample</text>
+<text x="480" y="416" font-size="11" fill="#b9cbe3">(neighbours wrap mod 16)</text>
+<rect x="690" y="225" width="230" height="100" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="700" y="243" font-size="12.5" font-weight="bold" fill="#eaf3ff">osc3  modulator</text>
+<text x="700" y="258" font-size="11" fill="#b9cbe3">a1 = softclip₅( sin(φ3 + L28)</text>
+<text x="700" y="272" font-size="11" fill="#b9cbe3">        · (1 − cos φ2⁰)/2   ← voice 0&#x27;s slow osc2</text>
+<text x="700" y="286" font-size="11" fill="#b9cbe3">        · (FN7·2π + L_30 + ⅛) )</text>
+<text x="700" y="300" font-size="11" fill="#b9cbe3">softclip_b(x) = b·(smoothstep(x/b+½) − ½)</text>
+<rect x="690" y="355" width="230" height="100" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="700" y="373" font-size="12.5" font-weight="bold" fill="#eaf3ff">osc1  carrier</text>
+<text x="700" y="388" font-size="11" fill="#b9cbe3">out = softclip₂( sin(φ1 + a1 + L28)</text>
+<text x="700" y="402" font-size="11" fill="#b9cbe3">        · c · env³ )</text>
+<text x="700" y="416" font-size="11" fill="#b9cbe3">c = .00425 + .01836·FN5   (level)</text>
+<text x="700" y="430" font-size="11" fill="#b9cbe3">level c·env³ → mean → h.x</text>
+<rect x="690" y="480" width="230" height="92" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="700" y="498" font-size="12.5" font-weight="bold" fill="#eaf3ff">pitch</text>
+<text x="700" y="513" font-size="11" fill="#b9cbe3">f_rand from noise (x·1024), f_pat from note</text>
+<text x="700" y="527" font-size="11" fill="#b9cbe3">f = lerp(f_rand, f_pat, L_c)</text>
+<text x="700" y="541" font-size="11" fill="#b9cbe3">osc1 rate = f</text>
+<text x="700" y="555" font-size="11" fill="#b9cbe3">osc3 rate = f·(1 + .002·FN6·(1+10·L_24))</text>
+<rect x="980" y="225" width="190" height="72" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="990" y="243" font-size="12.5" font-weight="bold" fill="#eaf3ff">mix</text>
+<text x="990" y="258" font-size="11" fill="#b9cbe3">mix = Σ out  (active voices)</text>
+<text x="990" y="272" font-size="11" fill="#b9cbe3">sc = softclip₅(mix)</text>
+<rect x="980" y="330" width="190" height="86" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="990" y="348" font-size="12.5" font-weight="bold" fill="#eaf3ff">dry / direct</text>
+<text x="990" y="363" font-size="11" fill="#b9cbe3">dry = .5·(1+G_c4)·(.08+.72·L_c)·sc</text>
+<text x="990" y="377" font-size="11" fill="#b9cbe3">G_d0 = (.125 + .875·L_c)·sc</text>
+<text x="990" y="391" font-size="11" fill="#b9cbe3">(direct signal, both channels)</text>
+<rect x="1190" y="225" width="190" height="120" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="1200" y="243" font-size="12.5" font-weight="bold" fill="#eaf3ff">delay line  DL[65 536]</text>
+<text x="1200" y="258" font-size="11" fill="#b9cbe3">write: DL[W] = dry + .28·band</text>
+<text x="1200" y="272" font-size="11" fill="#b9cbe3">22 read taps, k = 1…22, u = k/22:</text>
+<text x="1200" y="286" font-size="11" fill="#b9cbe3">  delay = 15 053 + 22 050·u²</text>
+<text x="1200" y="300" font-size="11" fill="#b9cbe3">           + slow triangle (≤ 512)</text>
+<text x="1200" y="314" font-size="11" fill="#b9cbe3">  acc = Σ u · DL[W − delay]</text>
+<rect x="1190" y="375" width="190" height="72" rx="4" fill="#0b1626" stroke="#ffb84d" stroke-width="1.2"/>
+<text x="1200" y="393" font-size="12.5" font-weight="bold" fill="#ffb84d">band-pass</text>
+<text x="1200" y="408" font-size="11" fill="#b9cbe3">lp2 += .9·(acc − lp2)</text>
+<text x="1200" y="422" font-size="11" fill="#b9cbe3">lp1 += .003·(lp2 − lp1)</text>
+<text x="1200" y="436" font-size="11" fill="#b9cbe3">band = lp2 − lp1</text>
+<rect x="980" y="480" width="400" height="92" rx="4" fill="#0b1626" stroke="#4f7fb5" stroke-width="1.2"/>
+<text x="990" y="498" font-size="12.5" font-weight="bold" fill="#eaf3ff">stereo output</text>
+<text x="990" y="513" font-size="11" fill="#b9cbe3">L = G_d0 + DL[W − 2 152] − DL[W − 13 380]</text>
+<text x="990" y="527" font-size="11" fill="#b9cbe3">R = G_d0 + DL[W − 14 440] − DL[W − 1 092]</text>
+<text x="990" y="541" font-size="11" fill="#b9cbe3">clamp ±1 → ×32 765 → int16</text>
+<text x="990" y="555" font-size="11" fill="#b9cbe3">W = W + 1 (mod 65 536)</text>
+<rect x="20" y="640" width="920" height="70" rx="4" fill="#0b1626" stroke="#7fd3ff" stroke-width="1.2"/>
+<text x="30" y="658" font-size="12.5" font-weight="bold" fill="#7fd3ff">shader constants h  (the renderer reads them every frame)</text>
+<text x="30" y="673" font-size="11" fill="#b9cbe3">h.x = mean voice level (c·env³)       h.y = t       h.z += G_c4·1e-4·h.x³       h.w += G_c4·1e-4·h.x</text>
+<text x="30" y="687" font-size="11" fill="#b9cbe3">→ tone-curve brightness and flicker, camera wobble (w()), and the lattice pattern in f()</text>
+<text x="980" y="600" font-size="10.5" fill="#7d93b0" text-anchor="start">per sample: 16 voices × 7 fractal-noise calls × 11 octaves ≈ 1 200 table lookups,</text>
+<text x="980" y="616" font-size="10.5" fill="#7d93b0" text-anchor="start">plus 22 delay taps  (≈ 50 000 x87 instructions per sample in the original)</text>
+<text x="980" y="660" font-size="10.5" fill="#7d93b0" text-anchor="start">note lengths: ~100 samples at the start (rapid retriggers),</text>
+<text x="980" y="676" font-size="10.5" fill="#7d93b0" text-anchor="start">up to ~18 s around 30–90 s, short again towards 240 s;</text>
+<text x="980" y="692" font-size="10.5" fill="#7d93b0" text-anchor="start">every retrigger advances the shared sequencer, so the</text>
+<text x="980" y="708" font-size="10.5" fill="#7d93b0" text-anchor="start">melody emerges from the random note lengths.</text>
+<polyline points="170,108 190,108" fill="none" stroke="#7fd3ff" stroke-width="1.3" marker-end="url(#actl)"/>
+<polyline points="515,158 515,190" fill="none" stroke="#7fd3ff" stroke-width="1.3" marker-end="url(#actl)"/>
+<text x="515" y="168" font-size="10.5" fill="#7fd3ff" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">L_c  G_c4  L_24  L_30  active voices</text>
+<polyline points="1120,158 1120,205 945,205" fill="none" stroke="#7fd3ff" stroke-width="1.3" marker-end="url(#actl)"/>
+<text x="1150" y="201" font-size="10.5" fill="#7fd3ff" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">FN_k(x)</text>
+<polyline points="140,313 140,340" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="184" y="322" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">phase ≥ 2π</text>
+<polyline points="140,428 140,455" fill="none" stroke="#ffb84d" stroke-width="1.3" marker-end="url(#aacc)"/>
+<text x="172" y="436" font-size="10.5" fill="#ffb84d" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">advance</text>
+<polyline points="240,520 690,520" fill="none" stroke="#ffb84d" stroke-width="1.3" marker-end="url(#aacc)"/>
+<text x="465" y="515" font-size="10.5" fill="#ffb84d" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">note</text>
+<polyline points="805,480 805,455" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="815" y="462" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">f</text>
+<polyline points="440,261 470,255" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="455" y="253" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">sin·depth</text>
+<polyline points="440,377 455,377 455,337 705,337 705,325" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)" stroke-dasharray="5 4"/>
+<text x="500" y="333" font-size="10" fill="#7d93b0" text-anchor="middle">φ2⁰ (voice 0)</text>
+<polyline points="565,355 565,325" fill="none" stroke="#ffb84d" stroke-width="1.3" marker-end="url(#aacc)"/>
+<text x="599" y="335" font-size="10.5" fill="#ffb84d" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">feedback</text>
+<polyline points="660,255 690,255" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="675" y="250" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">phase mod</text>
+<polyline points="660,305 675,305 675,375 690,375" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="647" y="345" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">phase mod</text>
+<polyline points="805,325 805,355" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="819" y="335" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">a1</text>
+<polyline points="759,455 759,470 565,470 565,427" fill="none" stroke="#ffb84d" stroke-width="1.3" marker-end="url(#aacc)"/>
+<text x="628" y="482" font-size="10.5" fill="#ffb84d" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">out → prev (next sample)</text>
+<polyline points="920,405 980,261" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="950" y="328" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">out</text>
+<polyline points="920,435 930,435 930,625 480,625 480,640" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="731" y="620" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">level → h.x</text>
+<polyline points="1075,297 1075,330" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="1087" y="308" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">sc</text>
+<polyline points="1170,356 1190,261" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="1180" y="303" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">dry</text>
+<polyline points="1247,345 1247,375" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="1231" y="355" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">acc</text>
+<polyline points="1342,375 1342,345" fill="none" stroke="#ffb84d" stroke-width="1.3" marker-end="url(#aacc)"/>
+<text x="1372" y="355" font-size="10.5" fill="#ffb84d" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">.28·band</text>
+<polyline points="1380,285 1392,285 1392,526 1380,526" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="1358" y="400" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">4 fixed taps</text>
+<polyline points="1075,416 1080,480" fill="none" stroke="#b9cbe3" stroke-width="1.3" marker-end="url(#a)"/>
+<text x="1060" y="443" font-size="10.5" fill="#b9cbe3" text-anchor="middle" paint-order="stroke" stroke="#05080e" stroke-width="4" stroke-linejoin="round">G_d0</text>
+<polyline points="600,610 600,640" fill="none" stroke="#7fd3ff" stroke-width="1.3" marker-end="url(#actl)"/>
+</svg>

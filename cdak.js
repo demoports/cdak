@@ -462,6 +462,7 @@ function param(name, def) {
 
 // opts.version overrides; otherwise #party / #final, then party.
 // opts.renderer: reuse a renderer (e.g. the launcher's preview) if it is for the same version.
+// opts.onStart: called when playback actually begins (after the soundtrack is pre-buffered).
 // opts.onEnd: called when the intro ends by itself (final: 252 s, party: 300 s).
 function start(canvas, status, opts) {
   opts = opts || {};
@@ -487,7 +488,7 @@ function start(canvas, status, opts) {
   }
 
   let running = true, lastStatus = null, lastRendered = -1;
-  const A = createAudio(ver, () => {});
+  const A = createAudio(ver, () => { if (opts.onStart) opts.onStart(); });
   const setStatus = (s) => { if (s !== lastStatus) { lastStatus = s; status(s); } };
   function frame() {
     if (!running) return;
