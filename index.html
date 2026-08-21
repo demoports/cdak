@@ -11,7 +11,7 @@
 
   /* launcher */
   #ui { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
-        justify-content: center; cursor: pointer; user-select: none; color: #bcd;
+        justify-content: center; user-select: none; color: #bcd;
         font: 13px/1.7 sans-serif; letter-spacing: .06em;
         background: radial-gradient(ellipse at center, rgba(0,0,0,.45) 0%, rgba(0,0,0,.8) 70%, #000 100%);
         transition: opacity .6s ease; }
@@ -108,14 +108,12 @@
   const mmss = (t) => { t = Math.round(t); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 
   sel.value = versionFromUrl();
-  sel.addEventListener('click', (e) => e.stopPropagation());
-  document.querySelector('#ui a').addEventListener('click', (e) => e.stopPropagation());   // the link must not start the intro
   sel.addEventListener('change', () => { location.hash = sel.value; showLauncher(); });
   addEventListener('hashchange', () => {
     const v = versionFromUrl();
     if (sel.value !== v) { sel.value = v; if (app) location.reload(); else showLauncher(); }
   });
-  ui.addEventListener('click', begin);
+  document.getElementById('go').addEventListener('click', begin);   // only the start button starts (or Enter / Space)
   addEventListener('keydown', (e) => {
     if (e.key === 'Escape') stop();
     if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && app && app.seek) {
