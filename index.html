@@ -95,11 +95,24 @@
     try {
       app = CDAK.start(canvas, setStatus, { version: sel.value, renderer: preview,
         onStart: () => { canvas.style.opacity = '1'; },
-        onEnd: () => { app = null; showLauncher(); } });
+        onEnd: () => { app = null; unlockScreen(); showLauncher(); } });
       window.__app = app;
+      lockScreen();
     } catch (e) { ui.classList.remove('hidden'); canvas.style.opacity = '1'; setStatus(e.message); throw e; }
   }
-  function stop() { if (!app) return; app.stop(); app = null; setStatus(''); showLauncher(); }
+  function stop() { if (!app) return; app.stop(); app = null; unlockScreen(); setStatus(''); showLauncher(); }
+
+  // keep the screen awake while the intro runs (Screen Wake Lock API; silently ignored where unsupported)
+  let wakeLock = null;
+  async function lockScreen() {
+    if (!('wakeLock' in navigator)) return;
+    try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+    catch (e) { wakeLock = null; }
+  }
+  function unlockScreen() { if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; } }
+  document.addEventListener('visibilitychange', () => {          // the lock is dropped when the tab is hidden
+    if (app && document.visibilityState === 'visible' && !wakeLock) lockScreen();
+  });
   let flashTimer = null;
   function flash(text) {               // transient status line (e.g. the time after seeking)
     setStatus(text); clearTimeout(flashTimer);
