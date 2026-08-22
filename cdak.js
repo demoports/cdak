@@ -229,6 +229,10 @@ void main(){
     if(!(abs(a)>.00032))break;
     z+=ss(.5,0.,a)*.01*(1.-z);
     p+=y*a;
+    // escaped rays: stop at a distance that is already fully white in p1 (c.w/19 >> 1) instead of
+    // marching to 1e20+ where length() overflows and f() goes NaN (black on GPUs that propagate
+    // NaN, e.g. Mali; Metal's fast-math hides it)
+    if(length(p-q.xyz)>1e3){p=q.xyz+y*1e3;break;}
   }
   vec3 n=normalize(vec3(f(p-e.xyy),f(p-e.yxy),f(p-e.yyx)));
   // for(i=0;i<3;i++,d=i*.05+.025,w-=...);  the increment part runs with i = 1,2,3
