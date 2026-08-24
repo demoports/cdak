@@ -19,13 +19,14 @@ Files:
 | `cdak.js` | the pixel shaders of both versions (HLSL → GLSL ES 3.00), WebGL2 two-pass renderer, worker-based audio streaming |
 | `cdak_synth_final.js` | the final's software synth, transliterated from the x87 code; bit-exact with the original |
 | `cdak_synth.js` | the party version's synth; bit-exact with the original |
-| `h_table_final.js`, `h_table.js` | optional: precomputed shader constants every 0.1 s, used for the launcher's background frame and `?t=` debugging |
+| `h_table_final.js`, `h_table.js` | optional: precomputed shader constants every 0.1 s, used for the launcher's background frame and `?t=` debugging; imported on demand, only for the selected version |
 
 Version: the dropdown on the start screen, or `#final` / `#party` in the URL.  Other URL parameters: `?w=1024&h=768` fixed render size
 (letterboxed), `?dpr=2` render at device pixels, `?t=120` render one frame at
-that time without audio.  Works from `file://` too (the synth worker is built
-from a Blob URL).  Needs WebGL2 with `EXT_color_buffer_float` (falls back to an
-8-bit render target otherwise).
+that time without audio.  The sources are ES modules, so the page has to be
+served over http(s) — `python3 -m http.server` in this directory, then
+<http://localhost:8000/> — rather than opened from `file://`.  Needs WebGL2 with
+`EXT_color_buffer_float` (falls back to an 8-bit render target otherwise).
 
 ## How the originals work
 

@@ -58,12 +58,9 @@
   <a class="keys" href="https://github.com/demoports/cdak" target="_blank" rel="noopener">github</a>
 </div>
 <div id="status"></div>
-<script src="h_table.js"></script>        <!-- optional: launcher preview + ?t= (party) -->
-<script src="h_table_final.js"></script>  <!-- optional: launcher preview + ?t= (final) -->
-<script src="cdak_synth.js"></script>
-<script src="cdak_synth_final.js"></script>
-<script src="cdak.js"></script>
-<script>
+<script type="module">
+  import { start, createRenderer, constantsAt, loadTable, VERSIONS } from './cdak.js';
+
   const canvas = document.getElementById('c'), ui = document.getElementById('ui');
   const sel = document.getElementById('version'), statusEl = document.getElementById('status');
   const setStatus = (s) => { statusEl.textContent = s; };
@@ -72,18 +69,24 @@
   // version: #party / #final (hash), default party.  The dropdown mirrors the hash.
   function versionFromUrl() {
     const h = location.hash.replace('#', '');
-    return CDAK.VERSIONS[h] ? h : 'party';
+    return VERSIONS[h] ? h : 'party';
+  }
+
+  // the optional h table is fetched on demand; draw the preview once it is in
+  async function refresh() {
+    await loadTable(VERSIONS[sel.value]);
+    if (!app) showLauncher();
   }
 
   // launcher background: one frame of the selected version, rendered live
   function showLauncher() {
     ui.classList.remove('hidden'); canvas.style.opacity = '1';
-    const ver = CDAK.VERSIONS[sel.value];
+    const ver = VERSIONS[sel.value];
     try {
-      if (!preview || preview.version !== ver.name) preview = CDAK.createRenderer(canvas, ver);
+      if (!preview || preview.version !== ver.name) preview = createRenderer(canvas, ver);
       const w = Math.min(1280, innerWidth);
       preview.resize(w, Math.max(1, Math.round(w * innerHeight / innerWidth)));
-      preview.render(CDAK.constantsAt(ver, ver.preview));
+      preview.render(constantsAt(ver, ver.preview));
     } catch (e) { setStatus(e.message); }
   }
 
@@ -93,7 +96,7 @@
     ui.classList.add('hidden');
     if (!debugFrame) canvas.style.opacity = '0';          // fade the preview out; back in when the intro starts
     try {
-      app = CDAK.start(canvas, setStatus, { version: sel.value, renderer: preview,
+      app = start(canvas, setStatus, { version: sel.value, renderer: preview,
         onStart: () => { canvas.style.opacity = '1'; },
         onEnd: () => { app = null; unlockScreen(); showLauncher(); } });
       window.__app = app;
@@ -121,10 +124,10 @@
   const mmss = (t) => { t = Math.round(t); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 
   sel.value = versionFromUrl();
-  sel.addEventListener('change', () => { location.hash = sel.value; showLauncher(); });
+  sel.addEventListener('change', () => { location.hash = sel.value; refresh(); });
   addEventListener('hashchange', () => {
     const v = versionFromUrl();
-    if (sel.value !== v) { sel.value = v; if (app) location.reload(); else showLauncher(); }
+    if (sel.value !== v) { sel.value = v; if (app) location.reload(); else refresh(); }
   });
   document.getElementById('go').addEventListener('click', begin);   // only the start button starts (or Enter / Space)
   addEventListener('keydown', (e) => {
@@ -142,8 +145,8 @@
   });
   addEventListener('resize', () => { if (!app) showLauncher(); });
 
-  if (debugFrame) begin();   // debug: single frame, no audio
-  else showLauncher();
+  if (debugFrame) loadTable(VERSIONS[sel.value]).then(begin);   // debug: single frame, no audio
+  else refresh();
 </script>
 </body>
 </html>

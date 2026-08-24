@@ -12,8 +12,8 @@
 // Worker slightly ahead of playback and also produce the per-frame shader
 // constants (level, time, camera...).
 
-(function () {
-'use strict';
+import { createSynth } from './cdak_synth.js';
+import { createSynthFinal } from './cdak_synth_final.js';
 
 const SR = 44100;
 const CHUNK = SR;              // 1 s of audio per worker message
@@ -267,17 +267,31 @@ void main(){
   fragColor=vec4(o,o.z);
 }`;
 
-const VERSIONS = {
-  party: { name: 'party', frag0: PARTY_FRAG0, frag1: PARTY_FRAG1, synth: 'createSynth', hsize: 4,
-           seconds: 301, end: 300, table: 'CDAK_H_TABLE', preview: 22 },   // original runs until ESC; music is silent by ~290 s
-  final: { name: 'final', frag0: FINAL_FRAG0, frag1: FINAL_FRAG1, synth: 'createSynthFinal', hsize: 16,
-           seconds: 253, end: 252, table: 'CDAK_H_TABLE_FINAL', preview: 30 },
+export const VERSIONS = {
+  party: { name: 'party', frag0: PARTY_FRAG0, frag1: PARTY_FRAG1, synth: createSynth, hsize: 4,
+           seconds: 301, end: 300, preview: 22,   // original runs until ESC; music is silent by ~290 s
+           table: () => import('./h_table.js').then((m) => m.H_TABLE) },
+  final: { name: 'final', frag0: FINAL_FRAG0, frag1: FINAL_FRAG1, synth: createSynthFinal, hsize: 16,
+           seconds: 253, end: 252, preview: 30,
+           table: () => import('./h_table_final.js').then((m) => m.H_TABLE_FINAL) },
 };
 
-// shader constants for a given time from the optional precomputed tables (h_table*.js)
-function constantsAt(ver, tm) {
+// The precomputed tables (h_table*.js) are optional: loadTable() resolves to
+// null when one is absent, and constantsAt() then falls back to (0, t, 0, 0).
+const tables = new Map();                         // version name -> Float32Array | null
+
+export async function loadTable(ver) {
+  if (!tables.has(ver.name)) {
+    try { tables.set(ver.name, await ver.table()); }
+    catch (e) { tables.set(ver.name, null); }
+  }
+  return tables.get(ver.name);
+}
+
+// shader constants for a given time from the optional precomputed tables
+export function constantsAt(ver, tm) {
   const c = new Float32Array(16); c[1] = tm;
-  const tbl = window[ver.table];
+  const tbl = tables.get(ver.name);
   if (tbl) {
     const i = Math.min(tbl.length / ver.hsize - 1, Math.round(tm * 10));
     for (let n = 0; n < ver.hsize; n++) c[n] = tbl[i * ver.hsize + n];
@@ -287,7 +301,7 @@ function constantsAt(ver, tm) {
 }
 
 // ------------------------------------------------------------------ renderer
-function createRenderer(canvas, ver) {
+export function createRenderer(canvas, ver) {
   const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: false,
                                            stencil: false, preserveDrawingBuffer: false });
   if (!gl) throw new Error('WebGL2 is required');
@@ -375,7 +389,7 @@ function createRenderer(canvas, ver) {
 // seeking: the generated chunks are kept (16-bit), and the playhead can be
 // moved anywhere that has been generated; jumping ahead of the synth waits
 // for it (the synth is sequential, there is no random access).
-function createAudio(ver, onReady) {
+export function createAudio(ver, onReady) {
   const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SR });
   const HS = ver.hsize, CH = CHUNK / SR;          // seconds per chunk
   const chunks = [];                              // {L, R: Int16Array, H: Float32Array} per chunk
@@ -384,7 +398,7 @@ function createAudio(ver, onReady) {
   let pos0 = 0, head = null;                      // position pos0 (s) started playing at ctx time head; null = paused/waiting
 
   const workerSrc = `
-    const createSynth = ${CDAK[ver.synth].toString()};
+    const createSynth = ${ver.synth.toString()};
     const syn = createSynth();
     const CHUNK = ${CHUNK}, HEVERY = ${HEVERY}, TOTAL = ${ver.seconds}, HS = ${HS};
     let idx = 0;
@@ -468,7 +482,7 @@ function param(name, def) {
 // opts.renderer: reuse a renderer (e.g. the launcher's preview) if it is for the same version.
 // opts.onStart: called when playback actually begins (after the soundtrack is pre-buffered).
 // opts.onEnd: called when the intro ends by itself (final: 252 s, party: 300 s).
-function start(canvas, status, opts) {
+export function start(canvas, status, opts) {
   opts = opts || {};
   const hash = (location.hash || '').replace('#', '');
   const want = opts.version || hash;
@@ -524,6 +538,3 @@ function start(canvas, status, opts) {
     audio: A, renderer: R, version: vname,
   };
 }
-
-window.CDAK = Object.assign(window.CDAK || {}, { start, createRenderer, createAudio, constantsAt, VERSIONS });
-})();

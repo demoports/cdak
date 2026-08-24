@@ -11,12 +11,10 @@
 //
 // createSynth() is deliberately self-contained (no outer closure references)
 // so that it can be serialized with Function.prototype.toString() into a
-// Blob-URL Web Worker (this makes the intro work from file:// as well).
+// Blob-URL Web Worker.  Keep it that way: it must not reference anything at
+// module scope, including imports.
 
-(function (root) {
-'use strict';
-
-function createSynth() {
+export function createSynth() {
   const f = Math.fround;
 
   // ---- float32 constants, exact values from the data segment (0x420e1c..)
@@ -305,8 +303,4 @@ function createSynth() {
   return self_;
 }
 
-const api = { createSynth, SAMPLE_RATE: 44100 };
-if (typeof module !== 'undefined' && module.exports) module.exports = api;
-else root.CDAK = Object.assign(root.CDAK || {}, api);
-
-})(typeof self !== 'undefined' ? self : this);
+export const SAMPLE_RATE = 44100;

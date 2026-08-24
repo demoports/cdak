@@ -13,10 +13,7 @@
 //
 // createSynthFinal() is self-contained (see cdak_synth.js for why).
 
-(function (root) {
-'use strict';
-
-function createSynthFinal() {
+export function createSynthFinal() {
   const f = Math.fround;
 
   // ---- constants (the final's float constants have 16-bit mantissas)
@@ -303,8 +300,5 @@ function createSynthFinal() {
   return self_;
 }
 
-const api = { createSynthFinal, SAMPLE_RATE: 44100, FINAL_LENGTH: 252 };
-if (typeof module !== 'undefined' && module.exports) module.exports = api;
-else root.CDAK = Object.assign(root.CDAK || {}, api);
-
-})(typeof self !== 'undefined' ? self : this);
+export const SAMPLE_RATE = 44100;
+export const FINAL_LENGTH = 252;
