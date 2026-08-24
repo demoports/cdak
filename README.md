@@ -1,4 +1,4 @@
-# cdak (browser port)
+# cdak (webgl port)
 
 A JavaScript / WebGL2 / WebAudio port of **cdak** by quite & orange
 (4k intro, Chaos Constructions 2010 — shader: unc, audio: brothomstates,
