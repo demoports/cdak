@@ -24,17 +24,23 @@
   #ui .credits { margin-top: 22px; color: #6d86a6; font-size: 12px; }
   #ui .credits b { color: #9fb6d4; font-weight: 400; }
   #ui .row { margin-top: 38px; display: flex; gap: 12px; align-items: center; }
-  #ui select, #ui button {
-    font: inherit; letter-spacing: .08em; border-radius: 2px; padding: 8px 16px; cursor: pointer; outline: none;
+  #ui select, #ui button { font: inherit; cursor: pointer; outline: none; }
+  #ui select {
+    letter-spacing: .08em; border-radius: 2px; padding: 8px 16px;
     background: rgba(8,18,34,.85); color: #dbe8ff; border: 1px solid rgba(140,190,255,.45);
     box-shadow: 0 0 12px rgba(80,150,255,.15), inset 0 0 18px rgba(80,150,255,.08);
     transition: border-color .2s, box-shadow .2s; }
   #ui select { appearance: none; -webkit-appearance: none; padding-right: 36px;
     background-image: linear-gradient(45deg, transparent 50%, #9cf 50%), linear-gradient(135deg, #9cf 50%, transparent 50%);
     background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
-  #ui select:hover, #ui button:hover, #ui select:focus-visible, #ui button:focus-visible {
+  #ui select:hover, #ui select:focus-visible {
     border-color: #bfe0ff; box-shadow: 0 0 22px rgba(120,190,255,.45), inset 0 0 18px rgba(120,190,255,.15); }
-  #ui button { color: #fff; border-color: rgba(170,215,255,.75); background: rgba(20,60,120,.7); }
+  #ui button {
+    padding: 6px 2px; border: 0; color: #dbe8ff; background: transparent;
+    letter-spacing: .18em; text-transform: uppercase; text-decoration: underline;
+    text-underline-offset: 7px; text-decoration-thickness: 1px; transition: color .2s; }
+  #ui button:not(:disabled):hover, #ui button:not(:disabled):focus-visible { color: #fff; }
+  #ui button:disabled { color: #6d86a6; cursor: progress; text-decoration: none; }
   #ui .controls { position: absolute; bottom: 22px; color: #4f6784; font-size: 11px; letter-spacing: .14em;
                   text-align: center; white-space: nowrap; }
   #ui .controls kbd { color: #9fb6d4; font: inherit; }
