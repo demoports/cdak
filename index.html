@@ -35,9 +35,11 @@
   #ui select:hover, #ui button:hover, #ui select:focus-visible, #ui button:focus-visible {
     border-color: #bfe0ff; box-shadow: 0 0 22px rgba(120,190,255,.45), inset 0 0 18px rgba(120,190,255,.15); }
   #ui button { color: #fff; border-color: rgba(170,215,255,.75); background: rgba(20,60,120,.7); }
-  #ui .keys { position: absolute; bottom: 22px; color: #4f6784; font-size: 11px; letter-spacing: .2em;
-              text-decoration: none; transition: color .2s; }
-  #ui .keys:hover { color: #9fb6d4; }
+  #ui .controls { position: absolute; bottom: 22px; color: #4f6784; font-size: 11px; letter-spacing: .14em;
+                  text-align: center; white-space: nowrap; }
+  #ui .controls kbd { color: #9fb6d4; font: inherit; }
+  #ui .controls a { display: inline-block; margin-top: 10px; color: #6d86a6; text-decoration: none; transition: color .2s; }
+  #ui .controls a:hover, #ui .controls a:focus-visible { color: #9fb6d4; }
   #status { position: absolute; left: 14px; bottom: 12px; color: #567; font: 11px sans-serif; letter-spacing: .1em; }
   #status:empty { display: none; }
 </style>
@@ -56,7 +58,10 @@
     </select>
     <button id="go" type="button">start</button>
   </div>
-  <a class="keys" href="https://github.com/demoports/cdak" target="_blank" rel="noopener">github</a>
+  <div class="controls">
+    <kbd>space</kbd> pause · <kbd>← →</kbd> seek · <kbd>f</kbd> fullscreen · <kbd>esc</kbd> stop<br>
+    <a href="https://github.com/demoports/cdak" target="_blank" rel="noopener noreferrer">github</a>
+  </div>
 </div>
 <div id="status"></div>
 <script type="module">
