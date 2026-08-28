@@ -141,7 +141,7 @@
     const v = versionFromUrl();
     if (sel.value !== v) { sel.value = v; if (app) location.reload(); else refresh(); }
   });
-  document.getElementById('go').addEventListener('click', begin);   // only the start button starts (or Enter / Space)
+  document.getElementById('go').addEventListener('click', begin);   // the start button or Space starts
   addEventListener('keydown', (e) => {
     if (e.key === 'Escape') stop();
     if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && app && app.seek) {
@@ -149,7 +149,7 @@
       const t = app.seek(e.key === 'ArrowLeft' ? -5 : 5);
       flash((e.key === 'ArrowLeft' ? '◀ ' : '▶ ') + mmss(t));
     }
-    if ((e.key === 'Enter' || e.key === ' ') && !app && document.activeElement !== sel) { e.preventDefault(); begin(); }
+    if (e.key === ' ' && !app && document.activeElement !== sel) { e.preventDefault(); begin(); }
     else if (e.key === ' ' && app && app.pause) { e.preventDefault(); app.pause(); }
     if (e.key === 'f' && document.fullscreenEnabled) {
       if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen();
